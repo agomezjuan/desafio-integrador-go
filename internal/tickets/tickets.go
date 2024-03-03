@@ -2,6 +2,7 @@ package tickets
 
 import (
 	"encoding/csv"
+	"errors"
 	"io"
 	"os"
 	"strconv"
@@ -62,8 +63,29 @@ func ReadTickets(filePath string) ([]Ticket, error) {
     return tickets, nil
 }
 
-// ejemplo 1
-func GetTotalTickets(destination string) (int, error) {}
+/**
+// Requerimiento 1
+// Una función que calcule cuántas personas viajan a un país determinado.
+*/
+func GetTotalTickets(destination string) (int, error) {
+	tickets, err := ReadTickets("tickets.csv")
+	if err != nil {
+		return 0, err
+	}
+
+	var total int
+	for _, ticket := range tickets {
+		if ticket.Destination == destination {
+			total++
+		}
+	}
+
+	if total == 0 {
+		return 0, errors.New("no se encontraron tickets para el destino especificado")
+	}
+
+	return total, nil
+}
 
 // ejemplo 2
 func GetMornings(time string) (int, error) {}
