@@ -1,42 +1,85 @@
 package main
 
 import (
-	"github.com/agomezjuan/desafio-integrador-go/internal/tickets"
 	"fmt"
+	"sync"
+
+	"github.com/agomezjuan/desafio-integrador-go/internal/tickets"
 )
 
 func main() {
+	// Creo un WaitGroup para esperar a que todas las goroutines terminen.
+	var wg sync.WaitGroup
+	filePath := "tickets.csv"
 	destino := "Czech Republic"
+	periodo := "noche"
 
-    // Buscar el total de tickets hacia el destino
-    totalTicketsDestino, err := tickets.GetTotalTickets(destino)
-    if err != nil {
-        panic(err)
-    }
-    fmt.Printf("Total de tickets hacia %s: %d\n\n", destino, totalTicketsDestino)
+	// Canal para resultados de GetTotalTickets.
+	countChannel := make(chan int)
 
+	// Canales para resultados de GetCountByPeriod.
+	periodResults := make(chan int)
 
-	// Buscar el total de tickets por periodo
-	periodos := []string{"madrugada", "mañana", "tarde", "noche"}
-	for _, periodo := range periodos {
+	// Canal para resultados de PercentageDestination.
+	percentageChannel := make(chan float64)
+
+	wg.Add(3) // Agregamos dos tareas al WaitGroup
+
+	// Goroutine para buscar el total de tickets hacia el destino
+	go func() {
+		defer wg.Done()
+
+		total, err := tickets.GetTotalTickets(destino)
+		if err != nil {
+			panic(err)
+		}
+		countChannel <- total
+	}()
+
+	// Goroutine para buscar el total de tickets por periodo
+	go func() {
+		defer wg.Done()
+
 		total, err := tickets.GetCountByPeriod(periodo)
 		if err != nil {
-			fmt.Printf("Error para el periodo %s: %v\n", periodo, err)
-			continue
+			panic(err)
 		}
-		fmt.Printf("Total de tickets en el periodo %s: %d\n", periodo, total)
-	}
+		periodResults <- total
+	}()
 
-	// Calcular el porcentaje de viajeros
-	allTickets, err := tickets.ReadTickets("tickets.csv")
-	if err != nil {
-		panic(err)
-	}
-	var totalTickets int = len(allTickets)
-	
-	percentage, err := tickets.PercentageDestination(destino, totalTickets)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Printf("\nPorcentaje de viajeros a %s: %.1f %%\n", destino, percentage)
+	// Goroutine para calcular el porcentaje de viajeros
+	go func() {
+		defer wg.Done()
+
+		allTickets, err := tickets.ReadTickets(filePath)
+		if err != nil {
+			panic(err)
+		}
+		totalTickets := len(allTickets)
+
+		percentage, err := tickets.PercentageDestination(destino, totalTickets)
+		if err != nil {
+			panic(err)
+		}
+		percentageChannel <- percentage
+	}()
+
+	// Esperar a que todas las goroutines terminen.
+	go func() {
+		wg.Wait()
+		close(countChannel)
+		close(percentageChannel)
+		close(periodResults)
+	}()
+
+	// Leer resultados de los canales
+	totalTicketsDestino := <-countChannel
+	percentage := <-percentageChannel
+	ticketsByPeriod := <-periodResults
+
+	// Imprimir resultados
+	fmt.Printf("Total de tickets hacia %s: %d\n", destino, totalTicketsDestino)
+	fmt.Printf("Porcentaje de viajeros a %s: %.1f %%\n", destino, percentage)
+	fmt.Printf("Total de tickets en el periodo %s: %d\n", periodo, ticketsByPeriod)
+
 }
