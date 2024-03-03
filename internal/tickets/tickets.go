@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"strconv"
+	"time"
 )
 
 type Ticket struct {
@@ -87,8 +88,51 @@ func GetTotalTickets(destination string) (int, error) {
 	return total, nil
 }
 
-// ejemplo 2
-func GetMornings(time string) (int, error) {}
+// Requerimiento 2
+// Una o varias funciones que calculen cuántas personas viajan en madrugada (0 → 6),
+// mañana (7 → 12), tarde (13 → 19), y noche (20 → 23).
+func GetCountByPeriod(period string) (int, error) {
+	tickets, err := ReadTickets("tickets.csv")
+	if err != nil {
+		return 0, err
+	}
 
-// ejemplo 3
-func AverageDestination(destination string, total int) (int, error) {}
+	var total int
+	for _, ticket := range tickets {
+		flightTime, err := time.Parse("15:04", ticket.Time)
+		if err != nil {
+			continue
+		}
+		hour := flightTime.Hour()
+
+		switch period {
+		case "madrugada":
+			if hour >= 0 && hour <= 6 {
+				total++
+			}
+		case "mañana":
+			if hour >= 7 && hour <= 12 {
+				total++
+			}
+		case "tarde":
+			if hour >= 13 && hour <= 19 {
+				total++
+			}
+		case "noche":
+			if hour >= 20 && hour <= 23 {
+				total++
+			}
+		default:
+			return 0, errors.New("periodo no válido")
+		}
+	}
+
+	if total == 0 {
+		return 0, errors.New("no se encontraron tickets para el periodo especificado")
+	}
+
+	return total, nil
+}
+
+
+
