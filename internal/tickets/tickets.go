@@ -134,5 +134,20 @@ func GetCountByPeriod(period string) (int, error) {
 	return total, nil
 }
 
+// Requerimiento 3
+// Una función que calcule el porcentaje de personas que viajan a un país determinado.
+func PercentageDestination(destination string, total int) (float64, error) {
+	if total <= 0 {
+		return 0, errors.New("el total de viajeros debe ser mayor que cero")
+	}
 
+	destinationCount, err := GetTotalTickets(destination)
+	if err != nil {
+		return 0, err
+	}
+
+	percentage := (float64(destinationCount) / float64(total)) * 100
+
+	return percentage, nil
+}
 
