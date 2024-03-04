@@ -19,4 +19,6 @@ analizar las tendencias de compra.
 El archivo en cuestión es del tipo valores separados por coma (CSV), donde los campos
 están compuestos por: **id**, **nombre**, **email**, **país de destino**, **hora del vuelo** y **precio**.
 
+[Leer la consigna completa](./docs/CTD-EB3-C11Enunciado.pdf)
+
 **¡Mucha suerte!**
